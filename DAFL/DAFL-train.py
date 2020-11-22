@@ -174,7 +174,8 @@ for epoch in range(opt.n_epochs):
             total_correct += pred.eq(labels.data.view_as(pred)).sum()
 
     len_data_test = 7936
-    avg_loss /= len_data_test
+    print('===========', avg_loss, total_correct)
+    avg_loss /= float(len_data_test)
     print('Test Avg. Loss: %f, Accuracy: %f' % (avg_loss, float(total_correct) / len_data_test))
     accr = round(float(total_correct) / len_data_test, 4)
     if accr > accr_best:
