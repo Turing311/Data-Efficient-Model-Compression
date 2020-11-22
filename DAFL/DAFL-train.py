@@ -164,6 +164,7 @@ for epoch in range(opt.n_epochs):
             if 796 in labels:
                 print('===error', i)
                 len_data_test -= len(labels)
+                continue
             
             images = images.cuda()
             labels = labels.cuda()
