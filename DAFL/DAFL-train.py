@@ -90,7 +90,7 @@ class Generator(nn.Module):
         
 generator = Generator().cuda()
     
-num_classes = 797
+num_classes = 796
 teacher = MfnModel(n_class=num_classes).cuda()
 teacher.load_state_dict( torch.load('mfn_org.pth') )
 teacher.eval()
@@ -159,7 +159,12 @@ for epoch in range(opt.n_epochs):
             print ("[Epoch %d/%d] [loss_oh: %f] [loss_ie: %f] [loss_a: %f] [loss_kd: %f]" % (epoch, opt.n_epochs,loss_one_hot.item(), loss_information_entropy.item(), loss_activation.item(), loss_kd.item()))
             
     with torch.no_grad():
+        len_data_test = 7936
         for i, (images, labels) in enumerate(data_test_loader):
+            if (labels == 796).nonzero() > 0:
+                print('===error', i)
+                len_data_test -= len(labels)
+            
             images = images.cuda()
             labels = labels.cuda()
             net.eval()
@@ -168,7 +173,6 @@ for epoch in range(opt.n_epochs):
             pred = output.data.max(1)[1]
             total_correct += pred.eq(labels.data.view_as(pred)).sum()
 
-    len_data_test = 7936
     print('===========', avg_loss, total_correct)
     avg_loss /= float(len_data_test)
     print('Test Avg. Loss: %f, Accuracy: %f' % (avg_loss, float(total_correct) / len_data_test))
