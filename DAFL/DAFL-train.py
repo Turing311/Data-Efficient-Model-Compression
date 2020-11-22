@@ -137,7 +137,7 @@ for epoch in range(opt.n_epochs):
 
     adjust_learning_rate(optimizer_S, epoch, opt.lr_S)
 
-    for i in range(1):
+    for i in range(120):
         net.train()
         z = Variable(torch.randn(opt.batch_size, opt.latent_dim)).cuda()
         optimizer_G.zero_grad()
@@ -162,7 +162,6 @@ for epoch in range(opt.n_epochs):
         len_data_test = 7936
         for i, (images, labels) in enumerate(data_test_loader):
             if 796 in labels:
-                print('===error', i)
                 len_data_test -= len(labels)
                 continue
             
@@ -174,7 +173,6 @@ for epoch in range(opt.n_epochs):
             pred = output.data.max(1)[1]
             total_correct += pred.eq(labels.data.view_as(pred)).sum()
 
-    print('===========', avg_loss, total_correct)
     avg_loss /= float(len_data_test)
     print('Test Avg. Loss: %f, Accuracy: %f' % (avg_loss, float(total_correct) / len_data_test))
     accr = round(float(total_correct) / len_data_test, 4)
