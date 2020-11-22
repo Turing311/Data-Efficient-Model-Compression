@@ -108,7 +108,7 @@ def kdloss(y, teacher_scores):
     return l_kl
 
 data_test_loader = torch.utils.data.DataLoader(DataLmdb("/kaggle/working/Valid-Low_lmdb", db_size=7939, crop_size=128, flip=False, scale=0.00390625, random=False),
-        batch_size=256, shuffle=False)
+        batch_size=128, shuffle=False)
 # Optimizers
 optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr_G)
 optimizer_S = torch.optim.SGD(net.parameters(), lr=opt.lr_S, momentum=0.9, weight_decay=5e-4)
