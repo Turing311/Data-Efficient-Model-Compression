@@ -161,6 +161,7 @@ for epoch in range(opt.n_epochs):
     with torch.no_grad():
         len_data_test = 7936
         for i, (images, labels) in enumerate(data_test_loader):
+            print((labels == 796))
             if (labels == 796).nonzero() > 0:
                 print('===error', i)
                 len_data_test -= len(labels)
