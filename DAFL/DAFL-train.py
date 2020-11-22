@@ -160,16 +160,9 @@ for epoch in range(opt.n_epochs):
             
     with torch.no_grad():
         for i, (images, labels) in enumerate(data_test_loader):
-            if i >= 17:
-                continue
-            try:
-                images = images.cuda()
-            except:
-                print('======== excep', i)
-            labels = labels.cuda()
             net.eval()
             output = net(images)
-            avg_loss += criterion(output, labels).sum()
+            avg_loss += torch.nn.CrossEntropyLoss(output, labels).sum()
             pred = output.data.max(1)[1]
             total_correct += pred.eq(labels.data.view_as(pred)).sum()
 
