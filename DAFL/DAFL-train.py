@@ -25,6 +25,9 @@ from lenet import LeNet5Half
 from torchvision.datasets import CIFAR10
 from torchvision.datasets import CIFAR100
 import resnet
+from datalmdb import DataLmdb
+from mfn import MfnModel
+from mfn_mini import MfnModelMini
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', type=str, default='MNIST', choices=['MNIST','cifar10','cifar100'])
@@ -32,13 +35,13 @@ parser.add_argument('--data', type=str, default='/cache/data/')
 parser.add_argument('--teacher_dir', type=str, default='/cache/models/')
 parser.add_argument('--n_epochs', type=int, default=200, help='number of epochs of training')
 parser.add_argument('--batch_size', type=int, default=512, help='size of the batches')
-parser.add_argument('--lr_G', type=float, default=0.2, help='learning rate')
-parser.add_argument('--lr_S', type=float, default=2e-3, help='learning rate')
+parser.add_argument('--lr_G', type=float, default=0.02, help='learning rate')
+parser.add_argument('--lr_S', type=float, default=0.1, help='learning rate')
 parser.add_argument('--latent_dim', type=int, default=100, help='dimensionality of the latent space')
-parser.add_argument('--img_size', type=int, default=32, help='size of each image dimension')
-parser.add_argument('--channels', type=int, default=1, help='number of image channels')
-parser.add_argument('--oh', type=float, default=1, help='one hot loss')
-parser.add_argument('--ie', type=float, default=5, help='information entropy loss')
+parser.add_argument('--img_size', type=int, default=128, help='size of each image dimension')
+parser.add_argument('--channels', type=int, default=3, help='number of image channels')
+parser.add_argument('--oh', type=float, default=0.5, help='one hot loss')
+parser.add_argument('--ie', type=float, default=20, help='information entropy loss')
 parser.add_argument('--a', type=float, default=0.1, help='activation loss')
 parser.add_argument('--output_dir', type=str, default='/cache/models/')
 
@@ -87,7 +90,9 @@ class Generator(nn.Module):
         
 generator = Generator().cuda()
     
-teacher = torch.load(opt.teacher_dir + 'teacher').cuda()
+num_classes = 796
+teacher = network.mfn.MfnModel(n_class=num_classes)
+teacher.load_state_dict( torch.load('mfn_org.pth') ).cuda()
 teacher.eval()
 criterion = torch.nn.CrossEntropyLoss().cuda()
 
@@ -100,46 +105,11 @@ def kdloss(y, teacher_scores):
     l_kl = F.kl_div(p, q, size_average=False)  / y.shape[0]
     return l_kl
 
-if opt.dataset == 'MNIST':    
-    # Configure data loader   
-    net = LeNet5Half().cuda()
-    net = nn.DataParallel(net)
-    data_test = MNIST(opt.data,
-                      train=False,
-                      transform=transforms.Compose([
-                          transforms.Resize((32, 32)),
-                          transforms.ToTensor(),
-                          transforms.Normalize((0.1307,), (0.3081,))
-                          ]))           
-    data_test_loader = DataLoader(data_test, batch_size=64, num_workers=1, shuffle=False)
-
-    # Optimizers
-    optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr_G)
-    optimizer_S = torch.optim.Adam(net.parameters(), lr=opt.lr_S)
-
-if opt.dataset != 'MNIST':  
-    transform_test = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-    ])
-    if opt.dataset == 'cifar10': 
-        net = resnet.ResNet18().cuda()
-        net = nn.DataParallel(net)
-        data_test = CIFAR10(opt.data,
-                          train=False,
-                          transform=transform_test)
-    if opt.dataset == 'cifar100': 
-        net = resnet.ResNet18(num_classes=100).cuda()
-        net = nn.DataParallel(net)
-        data_test = CIFAR100(opt.data,
-                          train=False,
-                          transform=transform_test)
-    data_test_loader = DataLoader(data_test, batch_size=opt.batch_size, num_workers=0)
-
-    # Optimizers
-    optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr_G)
-
-    optimizer_S = torch.optim.SGD(net.parameters(), lr=opt.lr_S, momentum=0.9, weight_decay=5e-4)
+data_test_loader = torch.utils.data.DataLoader(DataLmdb("/kaggle/working/Valid-Low_lmdb", db_size=7939, crop_size=128, flip=False, scale=0.00390625, random=False),
+        batch_size=256, shuffle=False)
+# Optimizers
+optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr_G)
+optimizer_S = torch.optim.SGD(net.parameters(), lr=opt.lr_S, momentum=0.9, weight_decay=5e-4)
 
 
 def adjust_learning_rate(optimizer, epoch, learing_rate):
@@ -162,8 +132,8 @@ for epoch in range(opt.n_epochs):
 
     total_correct = 0
     avg_loss = 0.0
-    if opt.dataset != 'MNIST':
-        adjust_learning_rate(optimizer_S, epoch, opt.lr_S)
+
+    adjust_learning_rate(optimizer_S, epoch, opt.lr_S)
 
     for i in range(120):
         net.train()
@@ -179,7 +149,7 @@ for epoch in range(opt.n_epochs):
         loss_information_entropy = (softmax_o_T * torch.log10(softmax_o_T)).sum()
         loss = loss_one_hot * opt.oh + loss_information_entropy * opt.ie + loss_activation * opt.a
         loss_kd = kdloss(net(gen_imgs.detach()), outputs_T.detach()) 
-        loss += loss_kd       
+        loss += loss_kd
         loss.backward()
         optimizer_G.step()
         optimizer_S.step() 
