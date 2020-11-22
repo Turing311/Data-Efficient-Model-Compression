@@ -91,12 +91,14 @@ class Generator(nn.Module):
 generator = Generator().cuda()
     
 num_classes = 796
-teacher = network.mfn.MfnModel(n_class=num_classes)
+teacher = MfnModel(n_class=num_classes)
 teacher.load_state_dict( torch.load('mfn_org.pth') ).cuda()
 teacher.eval()
+net = MfnModelMini(n_class=num_classes)
 criterion = torch.nn.CrossEntropyLoss().cuda()
 
 teacher = nn.DataParallel(teacher)
+net = nn.DataParallel(net)
 generator = nn.DataParallel(generator)
 
 def kdloss(y, teacher_scores):

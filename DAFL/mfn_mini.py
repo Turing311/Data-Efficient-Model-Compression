@@ -122,7 +122,7 @@ class MfnModelMini(nn.Module):
 #                m.bias.data.zero_()
 
 
-    def forward(self, x):
+    def forward(self, x, out_feature=False):
         conv1_pad       = F.pad(x, (1, 1, 1, 1))
         conv1           = self.conv1(conv1_pad)
         conv1_bn        = self.conv1_bn(conv1)
@@ -292,7 +292,12 @@ class MfnModelMini(nn.Module):
         eltwise_fc1 = torch.max(slice_fc1, slice_fc2)
 
         out = self.classifier(eltwise_fc1)
-        return out
+        
+        if out_feature == False:
+            return out
+        else:
+            feature = eltwise_fc1.view(eltwise_fc1.size(0), -1)
+            return out,feature
 
     def freeze(self):
         for name, p in self.named_parameters():
