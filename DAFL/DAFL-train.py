@@ -43,7 +43,7 @@ parser.add_argument('--channels', type=int, default=3, help='number of image cha
 parser.add_argument('--oh', type=float, default=0.5, help='one hot loss')
 parser.add_argument('--ie', type=float, default=20, help='information entropy loss')
 parser.add_argument('--a', type=float, default=0.1, help='activation loss')
-parser.add_argument('--output_dir', type=str, default='/cache/models/')
+parser.add_argument('--output_dir', type=str, default='./')
 
 opt = parser.parse_args()
 
@@ -173,9 +173,10 @@ for epoch in range(opt.n_epochs):
             pred = output.data.max(1)[1]
             total_correct += pred.eq(labels.data.view_as(pred)).sum()
 
-    avg_loss /= 7936
-    print('Test Avg. Loss: %f, Accuracy: %f' % (avg_loss.data.item(), float(total_correct) / len(data_test)))
-    accr = round(float(total_correct) / len(data_test), 4)
+    len_data_test = 7936
+    avg_loss /= len_data_test
+    print('Test Avg. Loss: %f, Accuracy: %f' % (avg_loss.item(), float(total_correct) / len_data_test)
+    accr = round(float(total_correct) / len_data_test, 4)
     if accr > accr_best:
         torch.save(net,opt.output_dir + 'student')
         accr_best = accr
