@@ -160,7 +160,9 @@ for epoch in range(opt.n_epochs):
             
     with torch.no_grad():
         for i, (images, labels) in enumerate(data_test_loader):
-            try:                
+            if i == 17:
+                continue
+            try:
                 images = images.cuda()
             except:
                 print('======== excep', i)
