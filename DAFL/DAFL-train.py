@@ -137,7 +137,7 @@ for epoch in range(opt.n_epochs):
 
     adjust_learning_rate(optimizer_S, epoch, opt.lr_S)
 
-    for i in range(120):
+    for i in range(1):
         net.train()
         z = Variable(torch.randn(opt.batch_size, opt.latent_dim)).cuda()
         optimizer_G.zero_grad()
@@ -164,15 +164,14 @@ for epoch in range(opt.n_epochs):
         for i, (images, labels) in enumerate(data_test_loader):
             net.eval()
             output = net(images)
+            print('=====' + labels.size())
             avg_loss += F.cross_entropy(output, labels, reduction='sum').item()
             pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
             total_correct += pred.eq(labels.data.view_as(pred)).sum().item()
             if i == 30:
                 break
         net.to('cuda')
-    print('===========eval finish')
     len_data_test = 30 * 128
-    print('===========', avg_loss, total_correct)
     avg_loss /= float(len_data_test)
     print('Test Avg. Loss: %f, Accuracy: %f' % (avg_loss, float(total_correct) / len_data_test))
     accr = round(float(total_correct) / len_data_test, 4)
