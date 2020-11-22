@@ -162,7 +162,7 @@ for epoch in range(opt.n_epochs):
         for i, (images, labels) in enumerate(data_test_loader):
             net.eval()
             output = net(images)
-            avg_loss += torch.nn.CrossEntropyLoss(output, labels).sum()
+            avg_loss += torch.nn.CrossEntropyLoss(output, labels, reduction='sum')
             pred = output.data.max(1)[1]
             total_correct += pred.eq(labels.data.view_as(pred)).sum()
 
