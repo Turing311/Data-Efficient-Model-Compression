@@ -137,7 +137,7 @@ for epoch in range(opt.n_epochs):
 
     adjust_learning_rate(optimizer_S, epoch, opt.lr_S)
 
-    for i in range(120):
+    for i in range(2):
         net.train()
         z = Variable(torch.randn(opt.batch_size, opt.latent_dim)).cuda()
         optimizer_G.zero_grad()
@@ -157,7 +157,8 @@ for epoch in range(opt.n_epochs):
         optimizer_S.step() 
         if i == 1:
             print ("[Epoch %d/%d] [loss_oh: %f] [loss_ie: %f] [loss_a: %f] [loss_kd: %f]" % (epoch, opt.n_epochs,loss_one_hot.item(), loss_information_entropy.item(), loss_activation.item(), loss_kd.item()))
-            
+
+    print('===========eval')
     with torch.no_grad():
         net.to('cpu')
         for i, (images, labels) in enumerate(data_test_loader):
@@ -167,7 +168,7 @@ for epoch in range(opt.n_epochs):
             pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
             total_correct += pred.eq(labels.data.view_as(pred)).sum().item()
         net.to('cuda')
-
+    print('===========eval finish')
     len_data_test = 7936
     print('===========', avg_loss, total_correct)
     avg_loss /= float(len_data_test)
