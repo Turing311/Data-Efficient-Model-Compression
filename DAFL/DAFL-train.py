@@ -162,11 +162,13 @@ for epoch in range(opt.n_epochs):
     with torch.no_grad():
         net.to('cpu')
         for i, (images, labels) in enumerate(data_test_loader):
-            net.eval()            
+            net.eval()
             output = net(images)
             avg_loss += F.cross_entropy(output, labels, reduction='sum').item()
             pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
             total_correct += pred.eq(labels.data.view_as(pred)).sum().item()
+            if i % 10 == 0:
+                print('=========', avg_loss, total_correct)
         net.to('cuda')
     print('===========eval finish')
     len_data_test = 7936
