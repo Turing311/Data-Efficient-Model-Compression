@@ -159,14 +159,14 @@ for epoch in range(opt.n_epochs):
             print ("[Epoch %d/%d] [loss_oh: %f] [loss_ie: %f] [loss_a: %f] [loss_kd: %f]" % (epoch, opt.n_epochs,loss_one_hot.item(), loss_information_entropy.item(), loss_activation.item(), loss_kd.item()))
             
     with torch.no_grad():
+        net.to('cpu')
         for i, (images, labels) in enumerate(data_test_loader):
-            net.eval()
-            images = images.cuda()
-            labels = labels.cuda()
+            net.eval()            
             output = net(images)
-            avg_loss += F.cross_entropy(output, labels, reduction='sum').item()
+            avg_loss += F.cross_entropy.to('cpu')(output, labels, reduction='sum').item()
             pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
             total_correct += pred.eq(labels.data.view_as(pred)).sum().item()
+        net.to('cuda')
 
     len_data_test = 7936
     print('===========', avg_loss, total_correct)
