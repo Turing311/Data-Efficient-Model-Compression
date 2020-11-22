@@ -90,7 +90,7 @@ class Generator(nn.Module):
         
 generator = Generator().cuda()
     
-num_classes = 796
+num_classes = 797
 teacher = MfnModel(n_class=num_classes).cuda()
 teacher.load_state_dict( torch.load('mfn_org.pth') )
 teacher.eval()
@@ -108,7 +108,7 @@ def kdloss(y, teacher_scores):
     return l_kl
 
 data_test_loader = torch.utils.data.DataLoader(DataLmdb("/kaggle/working/Valid-Low_lmdb", db_size=7939, crop_size=128, flip=False, scale=0.00390625, random=False),
-        batch_size=128, shuffle=False)
+        batch_size=256, shuffle=False)
 # Optimizers
 optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr_G)
 optimizer_S = torch.optim.SGD(net.parameters(), lr=opt.lr_S, momentum=0.9, weight_decay=5e-4)
@@ -157,22 +157,19 @@ for epoch in range(opt.n_epochs):
         optimizer_S.step() 
         if i == 1:
             print ("[Epoch %d/%d] [loss_oh: %f] [loss_ie: %f] [loss_a: %f] [loss_kd: %f]" % (epoch, opt.n_epochs,loss_one_hot.item(), loss_information_entropy.item(), loss_activation.item(), loss_kd.item()))
-
-    print('===========eval')
+            
     with torch.no_grad():
-        net.to('cpu')
         for i, (images, labels) in enumerate(data_test_loader):
+            images = images.cuda()
+            labels = labels.cuda()
             net.eval()
             output = net(images)
-            labels -= 1
-            print('=====', labels)
-            avg_loss += F.cross_entropy(output, labels, reduction='sum').item()
-            pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
-            total_correct += pred.eq(labels.data.view_as(pred)).sum().item()
-            if i == 30:
-                break
-        net.to('cuda')
-    len_data_test = 30 * 128
+            avg_loss += criterion(output, labels).sum()
+            pred = output.data.max(1)[1]
+            total_correct += pred.eq(labels.data.view_as(pred)).sum()
+
+    len_data_test = 7936
+    print('===========', avg_loss, total_correct)
     avg_loss /= float(len_data_test)
     print('Test Avg. Loss: %f, Accuracy: %f' % (avg_loss, float(total_correct) / len_data_test))
     accr = round(float(total_correct) / len_data_test, 4)
