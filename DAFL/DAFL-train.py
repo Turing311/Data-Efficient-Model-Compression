@@ -164,7 +164,7 @@ for epoch in range(opt.n_epochs):
         for i, (images, labels) in enumerate(data_test_loader):
             net.eval()
             output = net(images)
-            print('=====', labels.size())
+            print('=====', labels)
             avg_loss += F.cross_entropy(output, labels, reduction='sum').item()
             pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
             total_correct += pred.eq(labels.data.view_as(pred)).sum().item()
