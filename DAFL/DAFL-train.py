@@ -34,7 +34,7 @@ parser.add_argument('--dataset', type=str, default='MNIST', choices=['MNIST','ci
 parser.add_argument('--data', type=str, default='/cache/data/')
 parser.add_argument('--teacher_dir', type=str, default='/cache/models/')
 parser.add_argument('--n_epochs', type=int, default=200, help='number of epochs of training')
-parser.add_argument('--batch_size', type=int, default=512, help='size of the batches')
+parser.add_argument('--batch_size', type=int, default=256, help='size of the batches')
 parser.add_argument('--lr_G', type=float, default=0.02, help='learning rate')
 parser.add_argument('--lr_S', type=float, default=0.1, help='learning rate')
 parser.add_argument('--latent_dim', type=int, default=100, help='dimensionality of the latent space')
