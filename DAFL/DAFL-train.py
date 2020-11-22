@@ -175,7 +175,7 @@ for epoch in range(opt.n_epochs):
 
     len_data_test = 7936
     avg_loss /= len_data_test
-    print('Test Avg. Loss: %f, Accuracy: %f' % (avg_loss.item(), float(total_correct) / len_data_test))
+    print('Test Avg. Loss: %f, Accuracy: %f' % (avg_loss, float(total_correct) / len_data_test))
     accr = round(float(total_correct) / len_data_test, 4)
     if accr > accr_best:
         torch.save(net,opt.output_dir + 'student')
