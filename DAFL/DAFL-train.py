@@ -97,9 +97,9 @@ teacher.eval()
 net = MfnModelMini(n_class=num_classes).cuda()
 criterion = torch.nn.CrossEntropyLoss().cuda()
 
-teacher = nn.DataParallel(teacher)
-net = nn.DataParallel(net)
-generator = nn.DataParallel(generator)
+#teacher = nn.DataParallel(teacher)
+#net = nn.DataParallel(net)
+#generator = nn.DataParallel(generator)
 
 def kdloss(y, teacher_scores):
     p = F.log_softmax(y, dim=1)
