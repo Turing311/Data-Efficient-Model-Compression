@@ -161,6 +161,8 @@ for epoch in range(opt.n_epochs):
     with torch.no_grad():
         for i, (images, labels) in enumerate(data_test_loader):
             net.eval()
+            images = images.cuda()
+            labels = labels.cuda()
             output = net(images)
             avg_loss += F.cross_entropy(output, labels, reduction='sum').item()
             pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
