@@ -90,12 +90,14 @@ class Generator(nn.Module):
         
 generator = Generator().cuda()
     
-num_classes = 796
-teacher = MfnModel(n_class=num_classes).cuda()
-teacher.load_state_dict( torch.load('mfn_org.pth') )
+teacher = MfnModel().cuda()
+teacher.load_state_dict( torch.load('mfn_2510.pth') )
 teacher.eval()
-net = MfnModelMini(n_class=num_classes).cuda()
+net = MfnModelMini().cuda()
 criterion = torch.nn.CrossEntropyLoss().cuda()
+
+#net.load('student.pth')
+#generator.load('generator.pth')
 
 #teacher = nn.DataParallel(teacher)
 #net = nn.DataParallel(net)
@@ -107,8 +109,8 @@ def kdloss(y, teacher_scores):
     l_kl = F.kl_div(p, q, size_average=False)  / y.shape[0]
     return l_kl
 
-data_test_loader = torch.utils.data.DataLoader(DataLmdb("/kaggle/working/Valid-Low_lmdb", db_size=7939, crop_size=128, flip=False, scale=0.00390625, random=False),
-        batch_size=256, shuffle=False)
+data_test_loader = torch.utils.data.DataLoader(DataLmdb("/kaggle/working/Valid_DHLPC_lmdb", db_size=6831, crop_size=128, flip=False, scale=0.00390625, random=False),
+		batch_size=64, shuffle=False)
 # Optimizers
 optimizer_G = torch.optim.Adam(generator.parameters(), lr=opt.lr_G)
 optimizer_S = torch.optim.SGD(net.parameters(), lr=opt.lr_S, momentum=0.9, weight_decay=5e-4)
@@ -159,12 +161,8 @@ for epoch in range(opt.n_epochs):
             print ("[Epoch %d/%d] [loss_oh: %f] [loss_ie: %f] [loss_a: %f] [loss_kd: %f]" % (epoch, opt.n_epochs,loss_one_hot.item(), loss_information_entropy.item(), loss_activation.item(), loss_kd.item()))
             
     with torch.no_grad():
-        len_data_test = 7936
-        for i, (images, labels) in enumerate(data_test_loader):
-            if 796 in labels:
-                len_data_test -= len(labels)
-                continue
-            
+        len_data_test = len(data_test_loader.dataset)
+        for i, (images, labels) in enumerate(data_test_loader):            
             images = images.cuda()
             labels = labels.cuda()
             net.eval()

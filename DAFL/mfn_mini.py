@@ -6,7 +6,7 @@ import math
 
 class MfnModelMini(nn.Module):
 
-    def __init__(self, n_class=10):
+    def __init__(self):
 
         super(MfnModelMini, self).__init__()
         self.conv1 = self.__conv(2, name='conv1', in_channels=3, out_channels=48, kernel_size=(3, 3), stride=(2, 2), groups=1, bias=False)
@@ -109,32 +109,21 @@ class MfnModelMini(nn.Module):
         self.conv5_dw_bn = self.__batch_normalization(2, 'conv5_dw/bn', num_features=512, eps=9.999999747378752e-06, momentum=0.0)
         self.fc1_512_1 = self.__dense(name = 'fc1_512_1', in_features = 512, out_features = 512, bias = False)
         self.bn_fc1_512 = self.__batch_normalization(2, 'bn_fc1_512', num_features=512, eps=9.999999747378752e-06, momentum=0.0)
+        self.fc3_256_1 = self.__dense_fc(name = 'fc3_256_1', in_features = 256, out_features = 2510, bias = False)
 
-        self.classifier = nn.Sequential(
-            nn.Dropout(0.2),
-            nn.Linear(256, n_class, bias=False),
-        )
-
-        for m in self.classifier.modules():
-            if isinstance(m, nn.Linear):
-                n = m.weight.size(1)
-                m.weight.data.normal_(0, 0.01)
-#                m.bias.data.zero_()
-
-
-    def forward(self, x, out_feature=False):
+    def forward(self, x):
         conv1_pad       = F.pad(x, (1, 1, 1, 1))
         conv1           = self.conv1(conv1_pad)
         conv1_bn        = self.conv1_bn(conv1)
-        relu__1         = F.relu(conv1_bn)
-        conv1_dw_pad    = F.pad(relu__1, (1, 1, 1, 1))
+        relu_1          = F.relu(conv1_bn)
+        conv1_dw_pad    = F.pad(relu_1, (1, 1, 1, 1))
         conv1_dw        = self.conv1_dw(conv1_dw_pad)
         conv1_dw_bn     = self.conv1_dw_bn(conv1_dw)
-        relu__1_dw      = F.relu(conv1_dw_bn)
-        conv2_ex        = self.conv2_ex(relu__1_dw)
+        relu_1_dw       = F.relu(conv1_dw_bn)
+        conv2_ex        = self.conv2_ex(relu_1_dw)
         conv2_ex_bn     = self.conv2_ex_bn(conv2_ex)
-        relu__2_ex      = F.relu(conv2_ex_bn)
-        conv2_dw_pad    = F.pad(relu__2_ex, (1, 1, 1, 1))
+        relu_2_ex       = F.relu(conv2_ex_bn)
+        conv2_dw_pad    = F.pad(relu_2_ex, (1, 1, 1, 1))
         conv2_dw        = self.conv2_dw(conv2_dw_pad)
         conv2_dw_bn     = self.conv2_dw_bn(conv2_dw)
         relu_2_dw       = F.relu(conv2_dw_bn)
@@ -290,21 +279,20 @@ class MfnModelMini(nn.Module):
         bn_fc1_512      = bn_fc1_512.reshape(bn_fc1_512.size()[0], bn_fc1_512.size()[1])
         slice_fc1, slice_fc2       = bn_fc1_512[:, :256], bn_fc1_512[:, 256:]
         eltwise_fc1 = torch.max(slice_fc1, slice_fc2)
+        out       = self.fc3_256_1(eltwise_fc1)
+        return out
 
-        out = self.classifier(eltwise_fc1)
-        
-        if out_feature == False:
-            return out
-        else:
-            feature = eltwise_fc1.view(eltwise_fc1.size(0), -1)
-            return out,feature
+    @staticmethod
+    def __conv(dim, name, **kwargs):
+        if   dim == 1:  layer = nn.Conv1d(**kwargs)
+        elif dim == 2:  layer = nn.Conv2d(**kwargs)
+        elif dim == 3:  layer = nn.Conv3d(**kwargs)
+        else:           raise NotImplementedError()
 
-    def freeze(self):
-        for name, p in self.named_parameters():
-            p.requires_grad = False
-
-        for name, p in self.classifier.named_parameters():
-            p.requires_grad = True
+#        layer.state_dict()['weight'].copy_(torch.from_numpy(_weights_dict[name]['weights']))
+#        if 'bias' in _weights_dict[name]:
+#            layer.state_dict()['bias'].copy_(torch.from_numpy(_weights_dict[name]['bias']))
+        return layer
 
     @staticmethod
     def __batch_normalization(dim, name, **kwargs):
@@ -331,21 +319,17 @@ class MfnModelMini(nn.Module):
         return layer
 
     @staticmethod
-    def __conv(dim, name, **kwargs):
-        if   dim == 1:  layer = nn.Conv1d(**kwargs)
-        elif dim == 2:  layer = nn.Conv2d(**kwargs)
-        elif dim == 3:  layer = nn.Conv3d(**kwargs)
-        else:           raise NotImplementedError()
-
+    def __dense(name, **kwargs):
+        layer = nn.Linear(**kwargs)
 #        layer.state_dict()['weight'].copy_(torch.from_numpy(_weights_dict[name]['weights']))
 #        if 'bias' in _weights_dict[name]:
 #            layer.state_dict()['bias'].copy_(torch.from_numpy(_weights_dict[name]['bias']))
         return layer
 
     @staticmethod
-    def __dense(name, **kwargs):
+    def __dense_fc(name, **kwargs):
         layer = nn.Linear(**kwargs)
-#        layer.state_dict()['weight'].copy_(torch.from_numpy(_weights_dict[name]['weights']))
-#        if 'bias' in _weights_dict[name]:
-#            layer.state_dict()['bias'].copy_(torch.from_numpy(_weights_dict[name]['bias']))
+#        layer.state_dict()['weight'].copy_(torch.from_numpy(_weights_dict_fc[name]['weights']))
+#        if 'bias' in _weights_dict_fc[name]:
+#            layer.state_dict()['bias'].copy_(torch.from_numpy(_weights_dict_fc[name]['bias']))
         return layer
