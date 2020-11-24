@@ -145,7 +145,7 @@ for epoch in range(opt.n_epochs):
         optimizer_G.zero_grad()
         optimizer_S.zero_grad()        
         gen_imgs = generator(z)
-        outputs_T, features_T = teacher(gen_imgs, out_feature=True)   
+        outputs_T, features_T = teacher(gen_imgs, out_feature=True)
         pred = outputs_T.data.max(1)[1]
         loss_activation = -features_T.abs().mean()
         loss_one_hot = criterion(outputs_T,pred)

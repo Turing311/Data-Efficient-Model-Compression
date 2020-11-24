@@ -128,7 +128,7 @@ class MfnModel(nn.Module):
         self.bn_fc1_512 = self.__batch_normalization(2, 'bn_fc1_512', num_features=512, eps=9.999999747378752e-06, momentum=0.0)
         self.fc3_256_1 = self.__dense_fc(name = 'fc3_256_1', in_features = 256, out_features = 2510, bias = False)
 
-    def forward(self, x):
+    def forward(self, x, out_feature=False):
         conv1_pad       = F.pad(x, (1, 1, 1, 1))
         conv1           = self.conv1(conv1_pad)
         conv1_bn        = self.conv1_bn(conv1)
@@ -297,7 +297,12 @@ class MfnModel(nn.Module):
         slice_fc1, slice_fc2       = bn_fc1_512[:, :256], bn_fc1_512[:, 256:]
         eltwise_fc1 = torch.max(slice_fc1, slice_fc2)
         out       = self.fc3_256_1(eltwise_fc1)
-        return out
+
+        if out_feature == False:
+            return out
+        else:
+            feature = eltwise_fc1.view(eltwise_fc1.size(0), -1)
+            return out,feature
 
     @staticmethod
     def __conv(dim, name, **kwargs):
